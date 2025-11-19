@@ -4,220 +4,368 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Harmony SatView</title>
-
+    
     <!-- FAVICON (Satélite) -->
     <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🛰️</text></svg>">
     
-    <!-- Leaflet & Fontes -->
+    <!-- Leaflet & Fonts -->
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;800&display=swap" rel="stylesheet">
     
     <style>
-        /* --- ESTILO GERAL (DARK MODE) --- */
+        /* --- ESTILOS GERAIS --- */
         body { margin: 0; background: #121212; font-family: 'Inter', sans-serif; overflow: hidden; }
-        #map { width: 100vw; height: 100vh; background: #0e0e0e; } /* Fundo quase preto pra destacar o mapa */
+        #map { width: 100vw; height: 100vh; background: #0e0e0e; cursor: crosshair; }
 
-        /* BARRA LATERAL */
-        .sidebar {
-            position: absolute; top: 20px; left: 20px; width: 260px;
-            display: flex; flex-direction: column; gap: 12px; z-index: 1000;
-            max-height: 95vh; overflow-y: auto;
+        /* SIDEBAR */
+        .sidebar { 
+            position: absolute; top: 20px; left: 20px; width: 260px; 
+            display: flex; flex-direction: column; gap: 10px; z-index: 1000; 
+            max-height: 95vh; 
         }
-        /* Esconde a barra de rolagem da sidebar */
-        .sidebar::-webkit-scrollbar { width: 0px; background: transparent; }
-
-        /* LOGO */
-        .brand-box {
-            background: rgba(10, 10, 10, 0.95); 
-            padding: 15px; border-radius: 12px; border: 1px solid #333;
-            text-align: center; box-shadow: 0 4px 20px rgba(0,0,0,0.5);
+        
+        /* CAIXAS DE VIDRO (Glassmorphism) */
+        .glass-box { 
+            background: rgba(20, 20, 20, 0.9); backdrop-filter: blur(8px); 
+            padding: 12px; border-radius: 10px; color: #e0e0e0; 
+            border: 1px solid #333; box-shadow: 0 4px 10px rgba(0,0,0,0.3);
         }
-        .brand-title { color: #fff; font-weight: 800; font-size: 18px; letter-spacing: -0.5px; margin: 0; }
-        .brand-subtitle { color: #4caf50; font-size: 10px; text-transform: uppercase; letter-spacing: 2px; font-weight: 600; margin-top: 5px; }
+        
+        .brand-box { text-align: center; background: rgba(10, 10, 10, 0.95); border-bottom: 2px solid #4caf50; }
+        .brand-title { color: #fff; font-weight: 800; font-size: 18px; margin: 0; letter-spacing: -0.5px; }
+        .brand-sub { font-size: 10px; text-transform: uppercase; color: #4caf50; letter-spacing: 2px; margin-top: 2px; }
 
-        /* CAIXAS DE VIDRO */
-        .glass-box {
-            background: rgba(20, 20, 20, 0.9); backdrop-filter: blur(8px);
-            padding: 15px; border-radius: 10px; color: #e0e0e0;
-            border: 1px solid #333; 
-        }
-        .box-title { font-weight: 700; font-size: 11px; text-transform: uppercase; color: #666; margin-bottom: 10px; border-bottom: 1px solid #333; padding-bottom: 5px; }
-
-        /* UI DOS FILTROS */
-        .filter-row { display: flex; align-items: center; margin-bottom: 8px; cursor: pointer; font-size: 13px; transition: 0.2s; }
-        .filter-row:hover { color: #fff; transform: translateX(2px); }
-        .filter-row input { margin-right: 10px; accent-color: #4caf50; }
-        .f-icon { width: 20px; display: inline-block; text-align: center; margin-right: 5px; }
-
-        /* COORDENADAS */
-        .coord-box {
-            position: absolute; bottom: 20px; left: 20px; z-index: 1000;
-            font-family: 'Courier New', monospace; font-size: 14px; color: #4caf50; font-weight: bold;
-            border: 1px solid #333; background: #000; padding: 5px 10px; border-radius: 4px;
-        }
-
-        /* CRÉDITOS */
+        /* CRÉDITOS DA GUILDA (Restaurado) */
         .credits-box {
-            font-size: 11px; color: #555; text-align: center; padding: 10px;
-            background: rgba(0,0,0,0.8); border-radius: 8px;
+            font-size: 10px; color: #666; text-align: center; padding: 8px;
+            background: rgba(0,0,0,0.8); border-radius: 8px; margin-top: auto;
         }
         .guild-name { color: #ffc107; font-weight: bold; }
-
-        /* ÍCONES */
-        .map-icon {
-            font-size: 24px; text-align: center; line-height: 24px;
-            filter: drop-shadow(0 3px 3px rgba(0,0,0,0.8)); transition: transform 0.2s;
+        
+        /* BOTÃO MODO EDIÇÃO */
+        .edit-btn {
+            background: #222; color: #ccc; border: 1px solid #444; padding: 12px; width: 100%;
+            border-radius: 6px; cursor: pointer; font-weight: 600; display: flex; align-items: center; justify-content: center; gap: 8px;
+            transition: 0.2s;
         }
-        .map-icon:hover { transform: scale(1.3); z-index: 9999; }
-        .badge { padding: 2px 6px; border-radius: 4px; font-size: 10px; font-weight: bold; color: #fff; text-transform: uppercase; }
+        .edit-btn:hover { background: #333; color: #fff; }
+        .edit-btn.active { background: #2e7d32; color: #fff; border-color: #4caf50; box-shadow: 0 0 10px rgba(76, 175, 80, 0.3); }
+
+        /* MODAL (JANELA DE ADICIONAR) */
+        #modal {
+            display: none; position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%);
+            background: #1a1a1a; padding: 20px; border-radius: 12px; width: 320px; z-index: 2000;
+            border: 1px solid #444; box-shadow: 0 20px 50px rgba(0,0,0,0.9);
+        }
+        .modal-header { font-weight: bold; color: #fff; margin-bottom: 15px; border-bottom: 1px solid #333; padding-bottom: 10px; display:flex; justify-content:space-between; align-items:center; }
+        .form-group { margin-bottom: 12px; }
+        .form-label { display: block; font-size: 11px; color: #888; margin-bottom: 5px; text-transform: uppercase; font-weight: bold; }
+        .form-input, .form-select { width: 100%; padding: 10px; background: #252525; border: 1px solid #444; color: #fff; border-radius: 6px; box-sizing: border-box; outline:none; font-size: 13px; }
+        .form-input:focus, .form-select:focus { border-color: #4caf50; }
+        
+        /* SLIDER DE RANGE */
+        .range-wrapper { background: #222; padding: 10px; border-radius: 6px; border: 1px solid #333; }
+        .range-slider { width: 100%; cursor: pointer; accent-color: #4caf50; height: 5px; }
+        .range-value { font-size: 11px; color: #4caf50; text-align: right; margin-top: 5px; font-weight: bold; }
+
+        .modal-actions { display: flex; gap: 10px; margin-top: 20px; }
+        .btn-save { background: #4caf50; color: #000; border: none; padding: 10px; flex: 1; border-radius: 6px; cursor: pointer; font-weight: bold; transition: 0.2s; }
+        .btn-save:hover { background: #43a047; }
+        .btn-cancel { background: transparent; color: #aaa; border: 1px solid #444; padding: 10px; flex: 0.5; border-radius: 6px; cursor: pointer; }
+        .btn-cancel:hover { color: #fff; border-color: #666; }
+
+        /* UI ELEMENTOS */
+        .filter-row { display: flex; align-items: center; margin-bottom: 6px; font-size: 13px; cursor: pointer; color: #ccc; }
+        .filter-row:hover { color: #fff; }
+        .f-icon { width: 20px; text-align: center; margin-right: 8px; }
+        .coord-box { position: absolute; bottom: 20px; left: 20px; z-index: 1000; font-family: monospace; font-size: 14px; color: #4caf50; background: #000; padding: 5px 10px; border-radius: 4px; border: 1px solid #333; }
+        
+        /* MAP ICONS */
+        .map-icon { font-size: 24px; text-align: center; filter: drop-shadow(0 2px 3px #000); transition: transform 0.2s; }
+        .map-icon:hover { transform: scale(1.4); z-index: 999; }
+        .badge { padding: 2px 6px; border-radius: 4px; font-size: 10px; font-weight: bold; color: #fff; text-transform: uppercase; display: inline-block; margin-top: 3px; }
+
     </style>
 </head>
 <body>
 
+    <!-- SIDEBAR -->
     <div class="sidebar">
-        <div class="brand-box">
+        <div class="glass-box brand-box">
             <h1 class="brand-title">HARMONY <span style="color:#4caf50">SATVIEW</span></h1>
-            <div class="brand-subtitle">Sistema de Monitoramento</div>
+            <div class="brand-sub">Monitoramento</div>
         </div>
 
+        <!-- MODO EDIÇÃO -->
         <div class="glass-box">
-            <div class="box-title">Visualização</div>
-            <label class="filter-row"><input type="radio" name="map" checked onclick="trocarMapa('terreno')"> Satélite (Terreno)</label>
-            <label class="filter-row"><input type="radio" name="map" onclick="trocarMapa('topo')"> Topográfico (Linhas)</label>
+            <button id="btnEditMode" class="edit-btn" onclick="toggleEditMode()">
+                <span id="editIcon">✏️</span> <span id="editText">Modo Leitura</span>
+            </button>
+            <div style="font-size:10px; color:#666; margin-top:8px; text-align:center; line-height: 1.4;">
+                Ative para adicionar Deeds, Árvores ou Rifts clicando no mapa.
+            </div>
         </div>
 
+        <!-- CAMADAS -->
         <div class="glass-box">
-            <div class="box-title">Camadas de Dados</div>
+            <div style="font-weight:bold; font-size:10px; color:#666; margin-bottom:10px; text-transform:uppercase; letter-spacing:1px;">Camadas</div>
             <label class="filter-row" style="color:#81c784"><input type="checkbox" checked onchange="toggleGroup('deeds_active')"> <span class="f-icon">🏠</span> Deeds Ativos</label>
-            <label class="filter-row" style="color:#9e9e9e"><input type="checkbox" checked onchange="toggleGroup('deeds_fallen')"> <span class="f-icon">🪦</span> Histórico (Ruínas)</label>
-            <div style="border-top:1px solid #333; margin:8px 0;"></div>
+            <label class="filter-row" style="color:#9e9e9e"><input type="checkbox" checked onchange="toggleGroup('deeds_fallen')"> <span class="f-icon">🪦</span> Histórico</label>
             <label class="filter-row"><input type="checkbox" checked onchange="toggleGroup('rift')"> <span class="f-icon">🌀</span> Rifts</label>
-            <label class="filter-row"><input type="checkbox" checked onchange="toggleGroup('ores')"> <span class="f-icon">⛏️</span> Minérios</label>
+            <div style="border-top:1px solid #333; margin:5px 0;"></div>
             <label class="filter-row"><input type="checkbox" checked onchange="toggleGroup('botany')"> <span class="f-icon">🌲</span> Botânica</label>
             <label class="filter-row"><input type="checkbox" checked onchange="toggleGroup('mobs')"> <span class="f-icon">🐾</span> Fauna</label>
         </div>
-
-        <div class="glass-box" style="padding:10px;">
-            <input type="text" placeholder="🔍 Buscar..." 
-                   style="width:100%; background:#111; border:1px solid #333; color:#fff; padding:8px; border-radius:6px; outline:none; box-sizing:border-box;"
-                   onkeyup="renderizarMapa(this.value)">
+        
+        <!-- EXPORTAR -->
+        <div class="glass-box" style="padding:8px;">
+             <button onclick="exportarDados()" style="width:100%; background:transparent; border:1px dashed #444; color:#666; padding:5px; cursor:pointer; font-size:10px; border-radius: 4px;">
+                💾 Exportar Dados (JSON)
+             </button>
         </div>
 
+        <!-- ASSINATURA DA GUILDA (RESTAURADA) -->
         <div class="credits-box">
-            Desenvolvido por <span class="guild-name">A GUILDA</span><br>Harmony Server • 2025
+            Desenvolvido por <span class="guild-name">A GUILDA</span><br>
+            Harmony Server • 2025
         </div>
     </div>
 
+    <!-- COORDENADAS -->
     <div class="coord-box"><span id="coords">0, 0</span></div>
+
+    <!-- MODAL DE ADICIONAR -->
+    <div id="modal">
+        <div class="modal-header">
+            <span>📍 Novo Marcador</span>
+            <span style="cursor:pointer; color:#666" onclick="fecharModal()">✕</span>
+        </div>
+        
+        <div class="form-group">
+            <label class="form-label">Categoria</label>
+            <select id="inputType" class="form-select" onchange="atualizarFormulario()">
+                <option value="deed">🏠 Deed Ativo</option>
+                <option value="ruin">🪦 Histórico / Ruína</option>
+                <option value="tree">🌲 Árvore (Sprouts)</option>
+                <option value="bush">🌿 Arbusto (Seedlings)</option>
+                <option value="rift">🌀 Rift</option>
+            </select>
+        </div>
+
+        <div class="form-group">
+            <label class="form-label" id="nameLabel">Nome / Identificação</label>
+            <!-- Input Texto Padrão -->
+            <input type="text" id="inputName" class="form-input" placeholder="Ex: Vila do Norte">
+            
+            <!-- Lista de Árvores (Wurmpedia) -->
+            <select id="selectTree" class="form-select" style="display:none">
+                <option value="Oak">Oak (Carvalho)</option>
+                <option value="Pine">Pine (Pinheiro)</option>
+                <option value="Birch">Birch (Bétula)</option>
+                <option value="Cedar">Cedar (Cedro)</option>
+                <option value="Maple">Maple (Bordo)</option>
+                <option value="Willow">Willow (Salgueiro)</option>
+                <option value="Apple">Apple (Macieira)</option>
+                <option value="Cherry">Cherry (Cerejeira)</option>
+                <option value="Chestnut">Chestnut (Castanheira)</option>
+                <option value="Fir">Fir (Abeto)</option>
+                <option value="Linden">Linden (Tília)</option>
+                <option value="Walnut">Walnut (Nogueira)</option>
+            </select>
+
+            <!-- Lista de Arbustos (Wurmpedia) -->
+            <select id="selectBush" class="form-select" style="display:none">
+                <option value="Lavender">Lavender (Lavanda)</option>
+                <option value="Rose">Rose (Rosa)</option>
+                <option value="Grape">Grape (Uva)</option>
+                <option value="Blueberry">Blueberry</option>
+                <option value="Raspberry">Raspberry</option>
+                <option value="Hazelnut">Hazelnut (Avelã)</option>
+                <option value="Camellia">Camellia</option>
+                <option value="Lingonberry">Lingonberry</option>
+                <option value="Oleander">Oleander</option>
+                <option value="Thorn">Thorn (Espinho)</option>
+            </select>
+        </div>
+
+        <!-- CONTROLE DE RANGE -->
+        <div class="form-group" id="rangeGroup" style="display:none">
+            <div class="range-wrapper">
+                <label class="form-label" style="margin-bottom:10px">Abrangência (Range)</label>
+                <input type="range" id="inputRange" class="range-slider" min="1" max="5" step="1" value="1" oninput="atualizarRangeLabel(this.value)">
+                <div class="range-value">Nível: <span id="rangeLabel">1 (Pequeno)</span></div>
+            </div>
+        </div>
+
+        <div class="form-group">
+            <label class="form-label">Descrição / Data</label>
+            <input type="text" id="inputDesc" class="form-input" placeholder="Opcional">
+        </div>
+
+        <div class="modal-actions">
+            <button class="btn-cancel" onclick="fecharModal()">Cancelar</button>
+            <button class="btn-save" onclick="salvarPonto()">Salvar</button>
+        </div>
+    </div>
 
     <div id="map"></div>
 
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     <script>
-        // --- 1. A CORREÇÃO MATEMÁTICA (O SEGREDO) ---
+        // --- 1. CONFIGURAÇÃO DO MAPA ---
         const MAP_SIZE = 4096;
-        
-        // Fator de Escala: 256 (Tamanho do Tile) / 4096 (Tamanho do Mapa) = 1/16
-        // Isso diz ao Leaflet que o mundo 4096 deve caber em 1 azulejo no Zoom 0.
         const SCALE_FACTOR = 1/16; 
 
-        L.CRS.Harmony = L.Util.extend({}, L.CRS.Simple, {
-            transformation: new L.Transformation(SCALE_FACTOR, 0, SCALE_FACTOR, 0)
-        });
+        L.CRS.Harmony = L.Util.extend({}, L.CRS.Simple, { transformation: new L.Transformation(SCALE_FACTOR, 0, SCALE_FACTOR, 0) });
 
-        // --- 2. INICIALIZAÇÃO DO MAPA ---
         var map = L.map('map', {
-            crs: L.CRS.Harmony,
-            minZoom: 0,
-            maxZoom: 4,
-            zoomControl: false,
-            maxBounds: [[0,0], [MAP_SIZE, MAP_SIZE]], // Impede arrastar pro infinito
-            maxBoundsViscosity: 0.5
+            crs: L.CRS.Harmony, minZoom: 0, maxZoom: 4, zoomControl: false,
+            maxBounds: [[0,0], [MAP_SIZE, MAP_SIZE]]
         });
-
         L.control.zoom({ position: 'topright' }).addTo(map);
-        
-        // Centraliza
         map.fitBounds([[0,0], [MAP_SIZE, MAP_SIZE]]);
 
-        // --- 3. CARREGAMENTO DOS TILES ---
-        // Verifica se a pasta é tiles_terreno (minúsculo)
-        var layerTerreno = L.tileLayer('tiles_terreno/{z}/{x}/{y}.png', { 
-            minZoom: 0, maxZoom: 4, tileSize: 256, noWrap: true, tms: false,
-            bounds: [[0,0], [MAP_SIZE, MAP_SIZE]]
-        }).addTo(map);
-        
-        var layerTopo = L.tileLayer('tiles_topo/{z}/{x}/{y}.png', { 
-            minZoom: 0, maxZoom: 4, tileSize: 256, noWrap: true, tms: false,
-            bounds: [[0,0], [MAP_SIZE, MAP_SIZE]]
-        });
+        // TILES
+        var layerTerreno = L.tileLayer('tiles_terreno/{z}/{x}/{y}.png', { minZoom: 0, maxZoom: 4, tileSize: 256, noWrap: true, tms: false, bounds: [[0,0], [MAP_SIZE, MAP_SIZE]] }).addTo(map);
+        var layerTopo = L.tileLayer('tiles_topo/{z}/{x}/{y}.png', { minZoom: 0, maxZoom: 4, tileSize: 256, noWrap: true, tms: false, bounds: [[0,0], [MAP_SIZE, MAP_SIZE]] });
 
-        // --- 4. CONFIGURAÇÃO DE DADOS ---
+        // --- 2. DADOS E ESTADO ---
+        var editMode = false;
+        var tempClickCoords = { x: 0, y: 0 };
+        
         const config = {
-            'deed':        { icon: '🏠', color: '#4caf50', group: 'deeds_active', label: 'Ativo' },
-            'ruin':        { icon: '🪦', color: '#9e9e9e', group: 'deeds_fallen', label: 'Ruína' },
-            'rift':        { icon: '🌀', color: '#9c27b0', group: 'rift', label: 'Rift' },
-            'ore':         { icon: '⛏️', color: '#b0bec5', group: 'ores', label: 'Minério' }, 
-            'rare_ore':    { icon: '💎', color: '#00bcd4', group: 'ores', label: 'Raro' },
-            'surface':     { icon: '🔶', color: '#ff9800', group: 'ores', label: 'Solo' }, 
-            'tree':        { icon: '🌲', color: '#2e7d32', group: 'botany', label: 'Árvore' },
-            'bush':        { icon: '🌿', color: '#8bc34a', group: 'botany', label: 'Arbusto' },
-            'herb':        { icon: '🌱', color: '#a5d6a7', group: 'botany', label: 'Erva' },
-            'rare':        { icon: '⭐', color: '#ffc107', group: 'botany', label: 'Especial' },
-            'lair':        { icon: '🐾', color: '#f44336', group: 'mobs', label: 'Lair' },
-            'unique':      { icon: '🐲', color: '#d50000', group: 'mobs', label: 'Unique' }
+            'deed': { icon: '🏠', color: '#4caf50', group: 'deeds_active', label: 'Ativo' },
+            'ruin': { icon: '🪦', color: '#9e9e9e', group: 'deeds_fallen', label: 'Ruína' },
+            'rift': { icon: '🌀', color: '#9c27b0', group: 'rift', label: 'Rift' },
+            'tree': { icon: '🌲', color: '#2e7d32', group: 'botany', label: 'Floresta' },
+            'bush': { icon: '🌿', color: '#8bc34a', group: 'botany', label: 'Arbusto' }
         };
 
-        // --- SEU BANCO DE DADOS ---
-        const dados = [
-            { cat: 'deed', nome: "Sede A Guilda", x: 2048, y: 2048, desc: "Centro de Operações." },
-            { cat: 'ruin', nome: "Ruína Antiga", x: 1200, y: 3000, desc: "Histórico" },
-            { cat: 'rift', nome: "Rift Norte", item: "Tier 4", x: 2500, y: 1500, desc: "18/11/2025" },
-            { cat: 'ore', item: 'Gold', x: 2200, y: 2200, ql: 50 },
-            { cat: 'tree', item: 'Oak', x: 500, y: 500, escala: 5 }
+        // DADOS INICIAIS
+        var dados = [
+            { cat: 'deed', nome: "Sede A Guilda", x: 2048, y: 2048, desc: "HQ Principal" },
+            { cat: 'tree', nome: "Oak", x: 500, y: 500, escala: 5, desc: "Floresta Densa" }
         ];
 
         var layers = L.layerGroup().addTo(map);
-        var filtrosAtivos = { deeds_active: true, deeds_fallen: true, rift: true, ores: true, botany: true, mobs: true };
+        var filtros = { deeds_active: true, deeds_fallen: true, rift: true, botany: true, mobs: true, ores: true };
 
-        function renderizarMapa(busca = "") {
+        // --- 3. RENDERIZAÇÃO ---
+        function renderizarMapa() {
             layers.clearLayers();
             dados.forEach(d => {
-                let conf = config[d.cat] || { icon: '❓', color: '#fff', group: 'outros' };
-                if (!filtrosAtivos[conf.group]) return;
-                
-                let nome = d.nome || d.item;
-                if (busca && !(nome + " " + (d.desc||"")).toLowerCase().includes(busca.toLowerCase())) return;
+                let conf = config[d.cat] || { icon: '📍', color: '#fff', group: 'outros' };
+                if (!filtros[conf.group]) return;
 
-                // Círculos de área
+                // CÍRCULOS DE RANGE (AJUSTADO: MENORES!)
                 if (d.escala) {
-                    L.circle([d.y, d.x], { color: conf.color, fillColor: conf.color, fillOpacity: 0.15, radius: d.escala * 60, dashArray: '5, 5', weight: 1 }).addTo(layers);
+                    // Nova Escala: 1=20px (Pequeno) até 5=120px (O antigo 3)
+                    let radiuses = [20, 45, 70, 95, 120]; 
+                    let raio = radiuses[d.escala - 1] || 20;
+                    
+                    L.circle([d.y, d.x], {
+                        color: conf.color, fillColor: conf.color, fillOpacity: 0.2, 
+                        radius: raio, weight: 1, dashArray: '4, 4'
+                    }).addTo(layers);
                 }
 
-                // Marcadores
-                let htmlIcon = `<div style="color:${conf.color}; text-shadow:0 2px 4px #000">${conf.icon}</div>`;
-                // Atenção: Leaflet usa [Y, X]. A ordem aqui é [d.y, d.x]
+                let htmlIcon = `<div style="color:${conf.color}; text-shadow:0 2px 3px #000">${conf.icon}</div>`;
                 L.marker([d.y, d.x], { icon: L.divIcon({ className: 'map-icon', html: htmlIcon, iconSize:[24,24] }) })
-                .bindPopup(`
-                    <div style="text-align:center; font-family:sans-serif; min-width:150px">
-                        <strong style="color:${conf.color}; font-size:14px">${conf.icon} ${nome}</strong><br>
-                        <span class="badge" style="background:${conf.color}; margin: 5px 0; display:inline-block">${conf.label}</span>
-                        <p style="margin:5px 0; font-size:12px; color:#ccc">${d.desc || ''}</p>
-                        <div style="background:#222; color:#666; font-size:10px; padding:2px; border-radius:4px; margin-top:5px">
-                            X:${d.x} Y:${d.y}
-                        </div>
-                    </div>`)
+                .bindPopup(`<b>${conf.icon} ${d.nome}</b><br>${d.desc || ''}<br><small>Range: ${d.escala || '-'}</small>`)
                 .addTo(layers);
             });
         }
 
-        function toggleGroup(grupo) { filtrosAtivos[grupo] = !filtrosAtivos[grupo]; renderizarMapa(document.querySelector('input[type="text"]').value); }
+        // --- 4. MODO EDITOR ---
+        function toggleEditMode() {
+            editMode = !editMode;
+            const btn = document.getElementById('btnEditMode');
+            const txt = document.getElementById('editText');
+            if (editMode) {
+                btn.classList.add('active');
+                txt.innerText = "MODO EDIÇÃO ATIVO";
+                document.getElementById('map').style.cursor = "copy";
+            } else {
+                btn.classList.remove('active');
+                txt.innerText = "Modo Leitura";
+                document.getElementById('map').style.cursor = "crosshair";
+            }
+        }
+
+        map.on('click', function(e) {
+            if (!editMode) return;
+            tempClickCoords = { x: Math.round(e.latlng.lng), y: Math.round(e.latlng.lat) };
+            document.getElementById('modal').style.display = 'block';
+        });
+
+        function fecharModal() { document.getElementById('modal').style.display = 'none'; }
+
+        // ATUALIZA MODAL DINAMICAMENTE
+        function atualizarFormulario() {
+            const tipo = document.getElementById('inputType').value;
+            const nameInput = document.getElementById('inputName');
+            const treeSelect = document.getElementById('selectTree');
+            const bushSelect = document.getElementById('selectBush');
+            const rangeGroup = document.getElementById('rangeGroup');
+            
+            // Reseta visibilidade
+            nameInput.style.display = 'none';
+            treeSelect.style.display = 'none';
+            bushSelect.style.display = 'none';
+            rangeGroup.style.display = 'none';
+
+            if (tipo === 'tree') {
+                treeSelect.style.display = 'block';
+                rangeGroup.style.display = 'block';
+            } else if (tipo === 'bush') {
+                bushSelect.style.display = 'block';
+                rangeGroup.style.display = 'block';
+            } else {
+                nameInput.style.display = 'block';
+            }
+        }
+
+        function atualizarRangeLabel(val) {
+            const labels = ["Pequeno (Spot)", "Médio", "Grande", "Denso", "Massivo"];
+            document.getElementById('rangeLabel').innerText = `${val} (${labels[val-1]})`;
+        }
+
+        function salvarPonto() {
+            const tipo = document.getElementById('inputType').value;
+            let nome = "";
+
+            if (tipo === 'tree') nome = document.getElementById('selectTree').value;
+            else if (tipo === 'bush') nome = document.getElementById('selectBush').value;
+            else nome = document.getElementById('inputName').value;
+
+            if (!nome) { alert("Preencha o nome!"); return; }
+
+            const novoPonto = {
+                cat: tipo, nome: nome, x: tempClickCoords.x, y: tempClickCoords.y,
+                desc: document.getElementById('inputDesc').value,
+                escala: (tipo === 'tree' || tipo === 'bush') ? parseInt(document.getElementById('inputRange').value) : null
+            };
+
+            dados.push(novoPonto);
+            renderizarMapa();
+            fecharModal();
+            
+            // Limpa campos
+            document.getElementById('inputName').value = "";
+            document.getElementById('inputDesc').value = "";
+        }
+
+        function exportarDados() {
+            console.log(JSON.stringify(dados, null, 4));
+            alert("Dados exportados no Console (F12)!");
+        }
+
+        function toggleGroup(grupo) { filtros[grupo] = !filtros[grupo]; renderizarMapa(); }
         function trocarMapa(tipo) {
             if (tipo === 'terreno') { map.addLayer(layerTerreno); map.removeLayer(layerTopo); }
             else { map.addLayer(layerTopo); map.removeLayer(layerTerreno); }
         }
 
-        // Coordenadas do Mouse (Com travas de segurança)
         map.on('mousemove', e => {
             let x = Math.max(0, Math.min(Math.round(e.latlng.lng), MAP_SIZE));
             let y = Math.max(0, Math.min(Math.round(e.latlng.lat), MAP_SIZE));
