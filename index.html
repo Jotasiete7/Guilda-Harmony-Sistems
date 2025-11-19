@@ -56,26 +56,39 @@
         .filter-row { display: flex; align-items: center; margin-bottom: 6px; font-size: 13px; cursor: pointer; color: #bbb; }
         .filter-row:hover { color: #fff; }
         .f-icon { width: 20px; text-align: center; margin-right: 8px; }
-        .coord-box { position: absolute; bottom: 20px; left: 20px; z-index: 1000; font-family: monospace; font-size: 14px; color: #00e676; background: #000; padding: 5px 10px; border-radius: 4px; border: 1px solid #333; }
         
-        /* --- ÍCONES DINÂMICOS (ZOOM FIX) --- */
+        /* --- SMART COORDS BOX --- */
+        .coord-box { 
+            position: absolute; bottom: 20px; left: 20px; z-index: 1000; 
+            background: #000; border: 1px solid #333; border-radius: 4px;
+            display: flex; align-items: center; overflow: hidden;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.5);
+        }
+        .coord-input {
+            background: transparent; border: none; color: #00e676;
+            font-family: monospace; font-size: 14px; font-weight: bold;
+            padding: 8px 12px; width: 140px; outline: none;
+        }
+        .coord-input::placeholder { color: #00552b; }
+        .coord-icon { padding-right: 8px; color: #444; font-size: 12px; cursor: pointer;}
+        .coord-icon:hover { color: #fff; }
+
+        /* --- ÍCONES DINÂMICOS & CONTRASTE --- */
         .map-icon { 
             text-align: center; 
-            display: flex; align-items: center; justify-content: center;
-            /* Contraste forte para visibilidade */
+            display: flex !important; align-items: center; justify-content: center;
             text-shadow: -1px -1px 0 #000, 1px -1px 0 #000, -1px 1px 0 #000, 1px 1px 0 #000, 0 0 5px #000;
             transition: font-size 0.2s ease, transform 0.2s;
         }
 
-        /* TAMANHOS REDUZIDOS PELA METADE */
-        .zoom-0 .map-icon { font-size: 6px !important; opacity: 0.7; }  /* Pontinhos */
-        .zoom-1 .map-icon { font-size: 8px !important; opacity: 0.8; }  /* Pequeno */
-        .zoom-2 .map-icon { font-size: 10px !important; }
-        .zoom-3 .map-icon { font-size: 12px !important; }
-        .zoom-4 .map-icon { font-size: 14px !important; } /* Tamanho máximo legível */
+        /* ESCALA REDUZIDA (Discreto como vegetação) */
+        .zoom-0 .map-icon { font-size: 6px !important; opacity: 0.6; }
+        .zoom-1 .map-icon { font-size: 10px !important; opacity: 0.8; }
+        .zoom-2 .map-icon { font-size: 12px !important; }
+        .zoom-3 .map-icon { font-size: 16px !important; }
+        .zoom-4 .map-icon { font-size: 20px !important; } /* Max size menor */
 
-        .map-icon:hover { transform: scale(1.3) !important; opacity: 1 !important; z-index: 999; cursor: pointer; }
-        
+        .map-icon:hover { transform: scale(1.3) !important; opacity: 1 !important; z-index: 9999; cursor: pointer; }
         .badge { padding: 2px 6px; border-radius: 4px; font-size: 10px; font-weight: bold; color: #000; text-transform: uppercase; display: inline-block; margin-top: 3px; }
 
     </style>
@@ -94,12 +107,12 @@
         </div>
         <div class="glass-box">
             <div style="font-weight:bold; font-size:10px; color:#666; margin-bottom:10px; text-transform:uppercase; letter-spacing:1px;">Layers</div>
-            <label class="filter-row" style="color:#81c784"><input type="checkbox" checked onchange="toggleGroup('deeds_active')"> <span class="f-icon">🏠</span> Active Deeds</label>
-            <label class="filter-row" style="color:#9e9e9e"><input type="checkbox" checked onchange="toggleGroup('deeds_fallen')"> <span class="f-icon">🪦</span> History / Ruins</label>
+            <label class="filter-row" style="color:#ffea00"><input type="checkbox" checked onchange="toggleGroup('deeds_active')"> <span class="f-icon">🏛️</span> Active Deeds</label>
+            <label class="filter-row" style="color:#ffffff"><input type="checkbox" checked onchange="toggleGroup('deeds_fallen')"> <span class="f-icon">🏚️</span> History / Ruins</label>
             <label class="filter-row"><input type="checkbox" checked onchange="toggleGroup('rift')"> <span class="f-icon">🌀</span> Rifts</label>
             <div style="border-top:1px solid #333; margin:5px 0;"></div>
             <label class="filter-row" style="color:#00e676"><input type="checkbox" checked onchange="toggleGroup('botany')"> <span class="f-icon">🌲</span> Botany (Flora)</label>
-            <label class="filter-row"><input type="checkbox" checked onchange="toggleGroup('mobs')"> <span class="f-icon">🐾</span> Fauna</label>
+            <label class="filter-row" style="color:#ff5252"><input type="checkbox" checked onchange="toggleGroup('mobs')"> <span class="f-icon">🐾</span> Fauna</label>
         </div>
         <div class="glass-box" style="padding:8px;">
              <button onclick="exportarDados()" style="width:100%; background:transparent; border:1px dashed #444; color:#666; padding:5px; cursor:pointer; font-size:10px; border-radius: 4px;">
@@ -109,8 +122,13 @@
         <div class="credits-box">Dev by <span class="guild-name">A GUILDA</span><br>Harmony Server • 2025</div>
     </div>
 
-    <div class="coord-box"><span id="coords">0, 0</span></div>
+    <!-- SMART COORDS INPUT -->
+    <div class="coord-box">
+        <input type="text" id="coordInput" class="coord-input" placeholder="X, Y (Enter)" autocomplete="off">
+        <span class="coord-icon" onclick="focarInput()" title="Type coordinates">📍</span>
+    </div>
 
+    <!-- MODAL -->
     <div id="modal">
         <div class="modal-header">
             <span>📍 Add Marker</span>
@@ -119,16 +137,19 @@
         <div class="form-group">
             <label class="form-label">Category</label>
             <select id="inputType" class="form-select" onchange="atualizarFormulario()">
-                <option value="deed">🏠 Active Deed</option>
-                <option value="ruin">🪦 History / Ruin</option>
+                <option value="deed">🏛️ Active Deed</option>
+                <option value="ruin">🏚️ History / Ruin</option>
                 <option value="tree">🌲 Tree (Sprout)</option>
                 <option value="bush">🌿 Bush (Seedling)</option>
                 <option value="rift">🌀 Rift</option>
+                <option value="lair">🐾 Fauna / Lair</option>
+                <option value="unique">🐲 Unique / Boss</option>
             </select>
         </div>
         <div class="form-group">
             <label class="form-label" id="nameLabel">Name / Type</label>
             <input type="text" id="inputName" class="form-input" placeholder="Ex: North Village">
+            
             <select id="selectTree" class="form-select" style="display:none">
                 <option value="Apple tree">Apple tree</option>
                 <option value="Birch tree">Birch tree</option>
@@ -146,6 +167,7 @@
                 <option value="Walnut tree">Walnut tree</option>
                 <option value="Willow tree">Willow tree</option>
             </select>
+
             <select id="selectBush" class="form-select" style="display:none">
                 <option value="Blueberry bush">Blueberry bush</option>
                 <option value="Camellia bush">Camellia bush</option>
@@ -161,7 +183,7 @@
         </div>
         <div class="form-group" id="rangeGroup" style="display:none">
             <div class="range-wrapper">
-                <label class="form-label" style="margin-bottom:10px">Forest Range (Scale)</label>
+                <label class="form-label" style="margin-bottom:10px">Forest Range</label>
                 <input type="range" id="inputRange" class="range-slider" min="1" max="5" step="1" value="1" oninput="atualizarRangeLabel(this.value)">
                 <div class="range-value">Size: <span id="rangeLabel">1 (Small)</span></div>
             </div>
@@ -197,10 +219,12 @@
 
         var editMode = false;
         var tempClickCoords = { x: 0, y: 0 };
+        var inputFocado = false; // Controla se o usuário está digitando
         
+        // --- CONFIGURAÇÃO DE CORES E ÍCONES ---
         const config = {
-            'deed':        { icon: '🏠', color: '#4caf50', group: 'deeds_active', label: 'Active' },
-            'ruin':        { icon: '🪦', color: '#bdbdbd', group: 'deeds_fallen', label: 'Ruin' },
+            'deed':        { icon: '🏛️', color: '#ffea00', group: 'deeds_active', label: 'Active' }, // Amarelo Ouro
+            'ruin':        { icon: '🏚️', color: '#ffffff', group: 'deeds_fallen', label: 'Ruin' },   // Branco Contraste
             'rift':        { icon: '🌀', color: '#e040fb', group: 'rift', label: 'Rift' },
             'ore':         { icon: '⛏️', color: '#90a4ae', group: 'ores', label: 'Ore' }, 
             'tree':        { icon: '🌲', color: '#00e676', group: 'botany', label: 'Tree' },
@@ -209,11 +233,10 @@
             'unique':      { icon: '🐲', color: '#ff1744', group: 'mobs', label: 'Unique' }
         };
 
-        // BANCO DE DADOS VAZIO (CLEAN)
-        var dados = [];
-
+        var dados = []; // BANCO DE DADOS LIMPO
         var layers = L.layerGroup().addTo(map);
         var filtrosAtivos = { deeds_active: true, deeds_fallen: true, rift: true, ores: true, botany: true, mobs: true };
+        var tempMarker = null; // Marcador temporário do "Go To"
 
         function renderizarMapa(busca = "") {
             layers.clearLayers();
@@ -231,13 +254,11 @@
 
                 let htmlIcon = `<div style="color:${conf.color};">${conf.icon}</div>`;
                 
-                // BUG FIX: Tamanho e Ancoragem definidos para evitar "pulo"
                 L.marker([d.y, d.x], { 
                     icon: L.divIcon({ 
                         className: 'map-icon', 
                         html: htmlIcon, 
-                        iconSize: [20, 20], // Define o tamanho da caixa de clique
-                        iconAnchor: [10, 10] // Define o centro exato (metade do tamanho)
+                        iconSize: [30, 30], iconAnchor: [15, 15] 
                     }) 
                 })
                 .bindPopup(`<div style="text-align:center; font-family:sans-serif; min-width:150px"><strong style="color:${conf.color}; font-size:14px">${conf.icon} ${nome}</strong><br><span class="badge" style="background:${conf.color}; margin: 5px 0; display:inline-block">${conf.label}</span><p style="margin:5px 0; font-size:12px; color:#ccc">${d.desc || ''}</p><div style="background:#222; color:#666; font-size:10px; padding:2px; border-radius:4px; margin-top:5px">X:${d.x} Y:${d.y}</div></div>`)
@@ -245,6 +266,53 @@
             });
         }
 
+        // --- SMART COORDINATES LOGIC ---
+        const coordInput = document.getElementById('coordInput');
+
+        coordInput.addEventListener('focus', () => { inputFocado = true; });
+        coordInput.addEventListener('blur', () => { inputFocado = false; });
+
+        coordInput.addEventListener('keyup', function(e) {
+            if (e.key === 'Enter') {
+                let val = this.value.trim();
+                let x, y;
+
+                // Caso 1: Sequência de 8 números (ex: 10242048)
+                if (/^\d{8}$/.test(val)) {
+                    x = parseInt(val.substring(0, 4));
+                    y = parseInt(val.substring(4, 8));
+                } 
+                // Caso 2: Separado por espaço, vírgula ou ponto
+                else {
+                    // Substitui tudo que não é número por espaço e divide
+                    let parts = val.replace(/[^0-9]/g, ' ').trim().split(/\s+/);
+                    if (parts.length >= 2) {
+                        x = parseInt(parts[0]);
+                        y = parseInt(parts[1]);
+                    }
+                }
+
+                // Executa o voo se achou coords válidas
+                if (!isNaN(x) && !isNaN(y)) {
+                    // Trava nas bordas
+                    x = Math.max(0, Math.min(x, MAP_SIZE));
+                    y = Math.max(0, Math.min(y, MAP_SIZE));
+                    
+                    map.flyTo([y, x], 4); // Zoom máximo
+                    
+                    // Marcador visual temporário (Pino vermelho)
+                    if (tempMarker) map.removeLayer(tempMarker);
+                    tempMarker = L.marker([y, x]).addTo(map).bindPopup(`📍 Go To: ${x}, ${y}`).openPopup();
+                    
+                    // Limpa o input (opcional, ou deixa pra ele ver onde foi)
+                    this.blur(); 
+                }
+            }
+        });
+
+        function focarInput() { document.getElementById('coordInput').focus(); }
+
+        // --- UI & EDITOR ---
         function toggleEditMode() {
             editMode = !editMode;
             const btn = document.getElementById('btnEditMode');
@@ -291,9 +359,16 @@
         function exportarDados() { console.log(JSON.stringify(dados, null, 4)); alert("Data exported to Console (F12)!"); }
         function toggleGroup(grupo) { filtrosAtivos[grupo] = !filtrosAtivos[grupo]; renderizarMapa(document.querySelector('input[type="text"]').value); }
         function trocarMapa(tipo) { if (tipo === 'terreno') { map.addLayer(layerTerreno); map.removeLayer(layerTopo); } else { map.addLayer(layerTopo); map.removeLayer(layerTerreno); } }
-        map.on('mousemove', e => { let x = Math.max(0, Math.min(Math.round(e.latlng.lng), MAP_SIZE)); let y = Math.max(0, Math.min(Math.round(e.latlng.lat), MAP_SIZE)); document.getElementById('coords').innerText = `${x}, ${y}`; });
+        
+        map.on('mousemove', e => {
+            // Só atualiza se o usuário NÃO estiver digitando
+            if (inputFocado) return;
 
-        // --- LÓGICA DE ZOOM ---
+            let x = Math.max(0, Math.min(Math.round(e.latlng.lng), MAP_SIZE));
+            let y = Math.max(0, Math.min(Math.round(e.latlng.lat), MAP_SIZE));
+            document.getElementById('coordInput').value = `${x}, ${y}`;
+        });
+
         map.on('zoomend', function() {
             const z = map.getZoom();
             const mapDiv = document.getElementById('map');
