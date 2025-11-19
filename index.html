@@ -10,17 +10,23 @@
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;800&display=swap" rel="stylesheet">
     
     <style>
-        /* --- ESTILOS GERAIS --- */
+        /* --- GERAL --- */
         body { margin: 0; background: #121212; font-family: 'Inter', sans-serif; overflow: hidden; }
         #map { width: 100vw; height: 100vh; background: #0e0e0e; cursor: crosshair; }
 
-        /* SIDEBAR & UI */
+        /* SIDEBAR */
         .sidebar { position: absolute; top: 20px; left: 20px; width: 260px; display: flex; flex-direction: column; gap: 10px; z-index: 1000; max-height: 95vh; }
-        .glass-box { background: rgba(15, 15, 15, 0.95); backdrop-filter: blur(10px); padding: 12px; border-radius: 8px; color: #e0e0e0; border: 1px solid #333; box-shadow: 0 4px 15px rgba(0,0,0,0.5); }
+        
+        .glass-box { 
+            background: rgba(15, 15, 15, 0.95); backdrop-filter: blur(10px); 
+            padding: 12px; border-radius: 8px; color: #e0e0e0; 
+            border: 1px solid #333; box-shadow: 0 4px 15px rgba(0,0,0,0.5);
+        }
+        
         .brand-box { text-align: center; border-top: 3px solid #00e676; }
         .brand-title { color: #fff; font-weight: 800; font-size: 18px; margin: 0; letter-spacing: -0.5px; }
         .brand-sub { font-size: 10px; text-transform: uppercase; color: #00e676; letter-spacing: 2px; margin-top: 2px; }
-        
+
         .credits-box { font-size: 10px; color: #666; text-align: center; padding: 8px; background: rgba(0,0,0,0.8); border-radius: 8px; margin-top: auto; }
         .guild-name { color: #ffc107; font-weight: bold; }
         
@@ -46,46 +52,30 @@
         .btn-cancel { background: transparent; color: #aaa; border: 1px solid #444; padding: 10px; flex: 0.5; border-radius: 6px; cursor: pointer; }
         .btn-cancel:hover { color: #fff; border-color: #666; }
 
-        /* FILTERS & COORDS */
+        /* UI FILTERS */
         .filter-row { display: flex; align-items: center; margin-bottom: 6px; font-size: 13px; cursor: pointer; color: #bbb; }
         .filter-row:hover { color: #fff; }
         .f-icon { width: 20px; text-align: center; margin-right: 8px; }
         .coord-box { position: absolute; bottom: 20px; left: 20px; z-index: 1000; font-family: monospace; font-size: 14px; color: #00e676; background: #000; padding: 5px 10px; border-radius: 4px; border: 1px solid #333; }
         
-        /* --- ZOOM DINÂMICO (ICONS) --- */
-        
-        /* Estilo Base do Ícone */
+        /* --- ÍCONES DINÂMICOS (ZOOM FIX) --- */
         .map-icon { 
             text-align: center; 
-            text-shadow: -1px -1px 0 #000, 1px -1px 0 #000, -1px 1px 0 #000, 1px 1px 0 #000, 0px 2px 4px rgba(0,0,0,0.8); 
-            transition: all 0.3s ease; /* Animação suave */
-            transform-origin: center center;
+            display: flex; align-items: center; justify-content: center;
+            /* Contraste forte para visibilidade */
+            text-shadow: -1px -1px 0 #000, 1px -1px 0 #000, -1px 1px 0 #000, 1px 1px 0 #000, 0 0 5px #000;
+            transition: font-size 0.2s ease, transform 0.2s;
         }
 
-        /* ZOOM 0 (Muito longe): Ícones minúsculos, quase pontos */
-        .zoom-0 .map-icon { 
-            font-size: 10px !important; /* Bem pequeno */
-            opacity: 0.7;
-        }
+        /* TAMANHOS REDUZIDOS PELA METADE */
+        .zoom-0 .map-icon { font-size: 6px !important; opacity: 0.7; }  /* Pontinhos */
+        .zoom-1 .map-icon { font-size: 8px !important; opacity: 0.8; }  /* Pequeno */
+        .zoom-2 .map-icon { font-size: 10px !important; }
+        .zoom-3 .map-icon { font-size: 12px !important; }
+        .zoom-4 .map-icon { font-size: 14px !important; } /* Tamanho máximo legível */
 
-        /* ZOOM 1: Pequenos */
-        .zoom-1 .map-icon { 
-            font-size: 14px !important;
-            opacity: 0.8;
-        }
-
-        /* ZOOM 2: Médios */
-        .zoom-2 .map-icon { 
-            font-size: 18px !important;
-        }
-
-        /* ZOOM 3 & 4: Normais (Grandes) */
-        .zoom-3 .map-icon, .zoom-4 .map-icon { 
-            font-size: 26px !important;
-        }
-
-        /* Hover sempre aumenta, independente do zoom */
-        .map-icon:hover { transform: scale(1.5) !important; opacity: 1 !important; z-index: 999; }
+        .map-icon:hover { transform: scale(1.3) !important; opacity: 1 !important; z-index: 999; cursor: pointer; }
+        
         .badge { padding: 2px 6px; border-radius: 4px; font-size: 10px; font-weight: bold; color: #000; text-transform: uppercase; display: inline-block; margin-top: 3px; }
 
     </style>
@@ -121,7 +111,6 @@
 
     <div class="coord-box"><span id="coords">0, 0</span></div>
 
-    <!-- MODAL -->
     <div id="modal">
         <div class="modal-header">
             <span>📍 Add Marker</span>
@@ -220,10 +209,8 @@
             'unique':      { icon: '🐲', color: '#ff1744', group: 'mobs', label: 'Unique' }
         };
 
-        var dados = [
-            { cat: 'deed', nome: "A GUILDA HQ", x: 2048, y: 2048, desc: "Main Base" },
-            { cat: 'tree', nome: "Oak tree", x: 500, y: 500, escala: 5, desc: "Dense Forest" }
-        ];
+        // BANCO DE DADOS VAZIO (CLEAN)
+        var dados = [];
 
         var layers = L.layerGroup().addTo(map);
         var filtrosAtivos = { deeds_active: true, deeds_fallen: true, rift: true, ores: true, botany: true, mobs: true };
@@ -242,14 +229,15 @@
                     L.circle([d.y, d.x], { color: conf.color, fillColor: '#fff', fillOpacity: 0.15, opacity: 0.6, radius: raio, weight: 1, dashArray: '2, 4' }).addTo(layers);
                 }
 
-                // ÍCONE SEM TAMANHO FIXO NO HTML (Controlado pelo CSS)
                 let htmlIcon = `<div style="color:${conf.color};">${conf.icon}</div>`;
                 
+                // BUG FIX: Tamanho e Ancoragem definidos para evitar "pulo"
                 L.marker([d.y, d.x], { 
                     icon: L.divIcon({ 
-                        className: 'map-icon', // A classe que o CSS controla
+                        className: 'map-icon', 
                         html: htmlIcon, 
-                        iconSize: [0,0] // Deixa o CSS definir
+                        iconSize: [20, 20], // Define o tamanho da caixa de clique
+                        iconAnchor: [10, 10] // Define o centro exato (metade do tamanho)
                     }) 
                 })
                 .bindPopup(`<div style="text-align:center; font-family:sans-serif; min-width:150px"><strong style="color:${conf.color}; font-size:14px">${conf.icon} ${nome}</strong><br><span class="badge" style="background:${conf.color}; margin: 5px 0; display:inline-block">${conf.label}</span><p style="margin:5px 0; font-size:12px; color:#ccc">${d.desc || ''}</p><div style="background:#222; color:#666; font-size:10px; padding:2px; border-radius:4px; margin-top:5px">X:${d.x} Y:${d.y}</div></div>`)
@@ -305,15 +293,13 @@
         function trocarMapa(tipo) { if (tipo === 'terreno') { map.addLayer(layerTerreno); map.removeLayer(layerTopo); } else { map.addLayer(layerTopo); map.removeLayer(layerTerreno); } }
         map.on('mousemove', e => { let x = Math.max(0, Math.min(Math.round(e.latlng.lng), MAP_SIZE)); let y = Math.max(0, Math.min(Math.round(e.latlng.lat), MAP_SIZE)); document.getElementById('coords').innerText = `${x}, ${y}`; });
 
-        // --- LÓGICA DE ZOOM INTELIGENTE ---
+        // --- LÓGICA DE ZOOM ---
         map.on('zoomend', function() {
             const z = map.getZoom();
             const mapDiv = document.getElementById('map');
-            // Remove classes antigas e adiciona a nova (ex: zoom-0)
             mapDiv.className = ""; 
             mapDiv.classList.add(`zoom-${z}`);
         });
-        // Força a classe inicial
         document.getElementById('map').classList.add(`zoom-${map.getZoom()}`);
 
         renderizarMapa();
