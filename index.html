@@ -26,7 +26,6 @@
         .brand-box { text-align: center; border-top: 3px solid #00e676; }
         .brand-title { color: #fff; font-weight: 800; font-size: 18px; margin: 0; letter-spacing: -0.5px; }
         .brand-sub { font-size: 10px; text-transform: uppercase; color: #00e676; letter-spacing: 2px; margin-top: 2px; }
-
         .credits-box { font-size: 10px; color: #666; text-align: center; padding: 8px; background: rgba(0,0,0,0.8); border-radius: 8px; margin-top: auto; }
         .guild-name { color: #ffc107; font-weight: bold; }
         
@@ -45,50 +44,72 @@
         .range-wrapper { background: #222; padding: 10px; border-radius: 6px; border: 1px solid #333; }
         .range-slider { width: 100%; cursor: pointer; accent-color: #00e676; height: 5px; }
         .range-value { font-size: 11px; color: #00e676; text-align: right; margin-top: 5px; font-weight: bold; }
-
         .modal-actions { display: flex; gap: 10px; margin-top: 20px; }
         .btn-save { background: #00e676; color: #000; border: none; padding: 10px; flex: 1; border-radius: 6px; cursor: pointer; font-weight: bold; transition: 0.2s; }
         .btn-save:hover { background: #00c853; }
         .btn-cancel { background: transparent; color: #aaa; border: 1px solid #444; padding: 10px; flex: 0.5; border-radius: 6px; cursor: pointer; }
         .btn-cancel:hover { color: #fff; border-color: #666; }
 
-        /* UI FILTERS */
+        /* FILTERS & COORDS */
         .filter-row { display: flex; align-items: center; margin-bottom: 6px; font-size: 13px; cursor: pointer; color: #bbb; }
         .filter-row:hover { color: #fff; }
         .f-icon { width: 20px; text-align: center; margin-right: 8px; }
         
-        /* --- SMART COORDS BOX --- */
         .coord-box { 
             position: absolute; bottom: 20px; left: 20px; z-index: 1000; 
             background: #000; border: 1px solid #333; border-radius: 4px;
             display: flex; align-items: center; overflow: hidden;
             box-shadow: 0 4px 10px rgba(0,0,0,0.5);
         }
-        .coord-input {
-            background: transparent; border: none; color: #00e676;
-            font-family: monospace; font-size: 14px; font-weight: bold;
-            padding: 8px 12px; width: 140px; outline: none;
-        }
+        .coord-input { background: transparent; border: none; color: #00e676; font-family: monospace; font-size: 14px; font-weight: bold; padding: 8px 12px; width: 140px; outline: none; }
         .coord-input::placeholder { color: #00552b; }
         .coord-icon { padding-right: 8px; color: #444; font-size: 12px; cursor: pointer;}
         .coord-icon:hover { color: #fff; }
 
-        /* --- ÍCONES DINÂMICOS & CONTRASTE --- */
+        /* --- FIX DOS ÍCONES QUE SAMBAM --- */
         .map-icon { 
-            text-align: center; 
-            display: flex !important; align-items: center; justify-content: center;
-            text-shadow: -1px -1px 0 #000, 1px -1px 0 #000, -1px 1px 0 #000, 1px 1px 0 #000, 0 0 5px #000;
-            transition: font-size 0.2s ease, transform 0.2s;
+            /* O container agora é fixo e usa Flexbox pra segurar o emoji no centro */
+            display: flex !important;
+            align-items: center;
+            justify-content: center;
+            background: transparent;
+            /* Importante: Remove transições do container para evitar lag no arrasto */
         }
 
-        /* ESCALA REDUZIDA (Discreto como vegetação) */
-        .zoom-0 .map-icon { font-size: 6px !important; opacity: 0.6; }
-        .zoom-1 .map-icon { font-size: 10px !important; opacity: 0.8; }
-        .zoom-2 .map-icon { font-size: 12px !important; }
-        .zoom-3 .map-icon { font-size: 16px !important; }
-        .zoom-4 .map-icon { font-size: 20px !important; } /* Max size menor */
+        /* Quem muda de tamanho é o FILHO (span), não o pai. Assim o centro nunca muda. */
+        .map-icon span {
+            display: block;
+            text-align: center;
+            /* Sombra preta grossa para contraste em qualquer terreno */
+            text-shadow: 2px 0 #000, -2px 0 #000, 0 2px #000, 0 -2px #000, 1px 1px #000, -1px -1px #000, 1px -1px #000, -1px 1px #000;
+            transition: font-size 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275); /* Efeito elástico */
+            cursor: pointer;
+        }
+        
+        /* EFEITO HOVER NO ÍCONE */
+        .map-icon span:hover { transform: scale(1.3); filter: brightness(1.2); }
 
-        .map-icon:hover { transform: scale(1.3) !important; opacity: 1 !important; z-index: 9999; cursor: pointer; }
+        /* ESCALAS DE ZOOM (Ajustadas para serem discretas) */
+        .zoom-0 .map-icon span { font-size: 6px; opacity: 0.6; }
+        .zoom-1 .map-icon span { font-size: 10px; opacity: 0.8; }
+        .zoom-2 .map-icon span { font-size: 14px; opacity: 0.9; }
+        .zoom-3 .map-icon span { font-size: 18px; opacity: 1; }
+        .zoom-4 .map-icon span { font-size: 22px; opacity: 1; }
+
+        /* TOOLTIPS (PREVIEW AO PASSAR O MOUSE) */
+        .custom-tooltip {
+            background: rgba(0, 0, 0, 0.9);
+            border: 1px solid #444;
+            color: #fff;
+            font-family: 'Inter', sans-serif;
+            font-size: 11px;
+            font-weight: bold;
+            padding: 4px 8px;
+            border-radius: 4px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.5);
+        }
+        .leaflet-tooltip-top:before { border-top-color: #000; } /* Setinha preta */
+
         .badge { padding: 2px 6px; border-radius: 4px; font-size: 10px; font-weight: bold; color: #000; text-transform: uppercase; display: inline-block; margin-top: 3px; }
 
     </style>
@@ -107,10 +128,14 @@
         </div>
         <div class="glass-box">
             <div style="font-weight:bold; font-size:10px; color:#666; margin-bottom:10px; text-transform:uppercase; letter-spacing:1px;">Layers</div>
-            <label class="filter-row" style="color:#ffea00"><input type="checkbox" checked onchange="toggleGroup('deeds_active')"> <span class="f-icon">🏛️</span> Active Deeds</label>
-            <label class="filter-row" style="color:#ffffff"><input type="checkbox" checked onchange="toggleGroup('deeds_fallen')"> <span class="f-icon">🏚️</span> History / Ruins</label>
-            <label class="filter-row"><input type="checkbox" checked onchange="toggleGroup('rift')"> <span class="f-icon">🌀</span> Rifts</label>
+            
+            <!-- NOVOS ÍCONES E CORES -->
+            <label class="filter-row" style="color:#ffd700"><input type="checkbox" checked onchange="toggleGroup('deeds_active')"> <span class="f-icon">🏰</span> Active Deeds</label>
+            <label class="filter-row" style="color:#b0bec5"><input type="checkbox" checked onchange="toggleGroup('deeds_fallen')"> <span class="f-icon">🏚️</span> History / Ruins</label>
+            
             <div style="border-top:1px solid #333; margin:5px 0;"></div>
+            <label class="filter-row"><input type="checkbox" checked onchange="toggleGroup('rift')"> <span class="f-icon">🌀</span> Rifts</label>
+            <label class="filter-row"><input type="checkbox" checked onchange="toggleGroup('ores')"> <span class="f-icon">⛏️</span> Minérios</label>
             <label class="filter-row" style="color:#00e676"><input type="checkbox" checked onchange="toggleGroup('botany')"> <span class="f-icon">🌲</span> Botany (Flora)</label>
             <label class="filter-row" style="color:#ff5252"><input type="checkbox" checked onchange="toggleGroup('mobs')"> <span class="f-icon">🐾</span> Fauna</label>
         </div>
@@ -122,10 +147,9 @@
         <div class="credits-box">Dev by <span class="guild-name">A GUILDA</span><br>Harmony Server • 2025</div>
     </div>
 
-    <!-- SMART COORDS INPUT -->
     <div class="coord-box">
         <input type="text" id="coordInput" class="coord-input" placeholder="X, Y (Enter)" autocomplete="off">
-        <span class="coord-icon" onclick="focarInput()" title="Type coordinates">📍</span>
+        <span class="coord-icon" onclick="focarInput()" title="Go to Coords">📍</span>
     </div>
 
     <!-- MODAL -->
@@ -137,7 +161,7 @@
         <div class="form-group">
             <label class="form-label">Category</label>
             <select id="inputType" class="form-select" onchange="atualizarFormulario()">
-                <option value="deed">🏛️ Active Deed</option>
+                <option value="deed">🏰 Active Deed</option>
                 <option value="ruin">🏚️ History / Ruin</option>
                 <option value="tree">🌲 Tree (Sprout)</option>
                 <option value="bush">🌿 Bush (Seedling)</option>
@@ -149,7 +173,6 @@
         <div class="form-group">
             <label class="form-label" id="nameLabel">Name / Type</label>
             <input type="text" id="inputName" class="form-input" placeholder="Ex: North Village">
-            
             <select id="selectTree" class="form-select" style="display:none">
                 <option value="Apple tree">Apple tree</option>
                 <option value="Birch tree">Birch tree</option>
@@ -167,7 +190,6 @@
                 <option value="Walnut tree">Walnut tree</option>
                 <option value="Willow tree">Willow tree</option>
             </select>
-
             <select id="selectBush" class="form-select" style="display:none">
                 <option value="Blueberry bush">Blueberry bush</option>
                 <option value="Camellia bush">Camellia bush</option>
@@ -219,12 +241,12 @@
 
         var editMode = false;
         var tempClickCoords = { x: 0, y: 0 };
-        var inputFocado = false; // Controla se o usuário está digitando
+        var inputFocado = false;
         
-        // --- CONFIGURAÇÃO DE CORES E ÍCONES ---
+        // --- CONTRASTE ALTO ---
         const config = {
-            'deed':        { icon: '🏛️', color: '#ffea00', group: 'deeds_active', label: 'Active' }, // Amarelo Ouro
-            'ruin':        { icon: '🏚️', color: '#ffffff', group: 'deeds_fallen', label: 'Ruin' },   // Branco Contraste
+            'deed':        { icon: '🏰', color: '#ffd700', group: 'deeds_active', label: 'Active' }, // Gold
+            'ruin':        { icon: '🏚️', color: '#b0bec5', group: 'deeds_fallen', label: 'Ruin' },   // Grey/Ghost
             'rift':        { icon: '🌀', color: '#e040fb', group: 'rift', label: 'Rift' },
             'ore':         { icon: '⛏️', color: '#90a4ae', group: 'ores', label: 'Ore' }, 
             'tree':        { icon: '🌲', color: '#00e676', group: 'botany', label: 'Tree' },
@@ -233,10 +255,10 @@
             'unique':      { icon: '🐲', color: '#ff1744', group: 'mobs', label: 'Unique' }
         };
 
-        var dados = []; // BANCO DE DADOS LIMPO
+        var dados = []; 
         var layers = L.layerGroup().addTo(map);
         var filtrosAtivos = { deeds_active: true, deeds_fallen: true, rift: true, ores: true, botany: true, mobs: true };
-        var tempMarker = null; // Marcador temporário do "Go To"
+        var tempMarker = null;
 
         function renderizarMapa(busca = "") {
             layers.clearLayers();
@@ -252,79 +274,64 @@
                     L.circle([d.y, d.x], { color: conf.color, fillColor: '#fff', fillOpacity: 0.15, opacity: 0.6, radius: raio, weight: 1, dashArray: '2, 4' }).addTo(layers);
                 }
 
-                let htmlIcon = `<div style="color:${conf.color};">${conf.icon}</div>`;
+                // ÍCONE ESTÁVEL (Samba Fix)
+                let htmlIcon = `<span style="color:${conf.color};">${conf.icon}</span>`;
                 
-                L.marker([d.y, d.x], { 
+                let m = L.marker([d.y, d.x], { 
                     icon: L.divIcon({ 
                         className: 'map-icon', 
                         html: htmlIcon, 
-                        iconSize: [30, 30], iconAnchor: [15, 15] 
+                        iconSize: [30, 30], // CAIXA FIXA
+                        iconAnchor: [15, 15] // CENTRO FIXO
                     }) 
-                })
-                .bindPopup(`<div style="text-align:center; font-family:sans-serif; min-width:150px"><strong style="color:${conf.color}; font-size:14px">${conf.icon} ${nome}</strong><br><span class="badge" style="background:${conf.color}; margin: 5px 0; display:inline-block">${conf.label}</span><p style="margin:5px 0; font-size:12px; color:#ccc">${d.desc || ''}</p><div style="background:#222; color:#666; font-size:10px; padding:2px; border-radius:4px; margin-top:5px">X:${d.x} Y:${d.y}</div></div>`)
-                .addTo(layers);
+                });
+
+                // INTERAÇÃO: HOVER (Tooltip) e CLICK (Popup)
+                m.bindTooltip(`<span>${conf.icon} ${nome}</span>`, {
+                    direction: 'top',
+                    offset: [0, -10],
+                    className: 'custom-tooltip',
+                    opacity: 1
+                });
+
+                m.bindPopup(`<div style="text-align:center; font-family:sans-serif; min-width:150px"><strong style="color:${conf.color}; font-size:14px">${conf.icon} ${nome}</strong><br><span class="badge" style="background:${conf.color}; margin: 5px 0; display:inline-block">${conf.label}</span><p style="margin:5px 0; font-size:12px; color:#ccc">${d.desc || ''}</p><div style="background:#222; color:#666; font-size:10px; padding:2px; border-radius:4px; margin-top:5px">X:${d.x} Y:${d.y}</div></div>`);
+                
+                m.addTo(layers);
             });
         }
 
-        // --- SMART COORDINATES LOGIC ---
+        // --- NAV LOGIC ---
         const coordInput = document.getElementById('coordInput');
-
         coordInput.addEventListener('focus', () => { inputFocado = true; });
         coordInput.addEventListener('blur', () => { inputFocado = false; });
-
         coordInput.addEventListener('keyup', function(e) {
             if (e.key === 'Enter') {
                 let val = this.value.trim();
                 let x, y;
-
-                // Caso 1: Sequência de 8 números (ex: 10242048)
-                if (/^\d{8}$/.test(val)) {
-                    x = parseInt(val.substring(0, 4));
-                    y = parseInt(val.substring(4, 8));
-                } 
-                // Caso 2: Separado por espaço, vírgula ou ponto
+                if (/^\d{8}$/.test(val)) { x = parseInt(val.substring(0, 4)); y = parseInt(val.substring(4, 8)); } 
                 else {
-                    // Substitui tudo que não é número por espaço e divide
                     let parts = val.replace(/[^0-9]/g, ' ').trim().split(/\s+/);
-                    if (parts.length >= 2) {
-                        x = parseInt(parts[0]);
-                        y = parseInt(parts[1]);
-                    }
+                    if (parts.length >= 2) { x = parseInt(parts[0]); y = parseInt(parts[1]); }
                 }
-
-                // Executa o voo se achou coords válidas
                 if (!isNaN(x) && !isNaN(y)) {
-                    // Trava nas bordas
-                    x = Math.max(0, Math.min(x, MAP_SIZE));
-                    y = Math.max(0, Math.min(y, MAP_SIZE));
-                    
-                    map.flyTo([y, x], 4); // Zoom máximo
-                    
-                    // Marcador visual temporário (Pino vermelho)
+                    x = Math.max(0, Math.min(x, MAP_SIZE)); y = Math.max(0, Math.min(y, MAP_SIZE));
+                    map.flyTo([y, x], 4);
                     if (tempMarker) map.removeLayer(tempMarker);
-                    tempMarker = L.marker([y, x]).addTo(map).bindPopup(`📍 Go To: ${x}, ${y}`).openPopup();
-                    
-                    // Limpa o input (opcional, ou deixa pra ele ver onde foi)
+                    tempMarker = L.marker([y, x]).addTo(map).bindPopup(`📍 Target: ${x}, ${y}`).openPopup();
                     this.blur(); 
                 }
             }
         });
-
         function focarInput() { document.getElementById('coordInput').focus(); }
 
-        // --- UI & EDITOR ---
         function toggleEditMode() {
             editMode = !editMode;
             const btn = document.getElementById('btnEditMode');
             const txt = document.getElementById('editText');
             if (editMode) {
-                btn.classList.add('active');
-                txt.innerText = "EDIT MODE ACTIVE";
-                document.getElementById('map').style.cursor = "copy";
+                btn.classList.add('active'); txt.innerText = "EDIT MODE ACTIVE"; document.getElementById('map').style.cursor = "copy";
             } else {
-                btn.classList.remove('active');
-                txt.innerText = "View Mode";
-                document.getElementById('map').style.cursor = "crosshair";
+                btn.classList.remove('active'); txt.innerText = "View Mode"; document.getElementById('map').style.cursor = "crosshair";
             }
         }
 
@@ -361,9 +368,7 @@
         function trocarMapa(tipo) { if (tipo === 'terreno') { map.addLayer(layerTerreno); map.removeLayer(layerTopo); } else { map.addLayer(layerTopo); map.removeLayer(layerTerreno); } }
         
         map.on('mousemove', e => {
-            // Só atualiza se o usuário NÃO estiver digitando
             if (inputFocado) return;
-
             let x = Math.max(0, Math.min(Math.round(e.latlng.lng), MAP_SIZE));
             let y = Math.max(0, Math.min(Math.round(e.latlng.lat), MAP_SIZE));
             document.getElementById('coordInput').value = `${x}, ${y}`;
@@ -372,8 +377,7 @@
         map.on('zoomend', function() {
             const z = map.getZoom();
             const mapDiv = document.getElementById('map');
-            mapDiv.className = ""; 
-            mapDiv.classList.add(`zoom-${z}`);
+            mapDiv.className = ""; mapDiv.classList.add(`zoom-${z}`);
         });
         document.getElementById('map').classList.add(`zoom-${map.getZoom()}`);
 
