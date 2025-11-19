@@ -1,0 +1,230 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Harmony SatView</title>
+
+    <!-- FAVICON (Satélite) -->
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🛰️</text></svg>">
+    
+    <!-- Leaflet & Fontes -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;800&display=swap" rel="stylesheet">
+    
+    <style>
+        /* --- ESTILO GERAL (DARK MODE) --- */
+        body { margin: 0; background: #121212; font-family: 'Inter', sans-serif; overflow: hidden; }
+        #map { width: 100vw; height: 100vh; background: #0e0e0e; } /* Fundo quase preto pra destacar o mapa */
+
+        /* BARRA LATERAL */
+        .sidebar {
+            position: absolute; top: 20px; left: 20px; width: 260px;
+            display: flex; flex-direction: column; gap: 12px; z-index: 1000;
+            max-height: 95vh; overflow-y: auto;
+        }
+        /* Esconde a barra de rolagem da sidebar */
+        .sidebar::-webkit-scrollbar { width: 0px; background: transparent; }
+
+        /* LOGO */
+        .brand-box {
+            background: rgba(10, 10, 10, 0.95); 
+            padding: 15px; border-radius: 12px; border: 1px solid #333;
+            text-align: center; box-shadow: 0 4px 20px rgba(0,0,0,0.5);
+        }
+        .brand-title { color: #fff; font-weight: 800; font-size: 18px; letter-spacing: -0.5px; margin: 0; }
+        .brand-subtitle { color: #4caf50; font-size: 10px; text-transform: uppercase; letter-spacing: 2px; font-weight: 600; margin-top: 5px; }
+
+        /* CAIXAS DE VIDRO */
+        .glass-box {
+            background: rgba(20, 20, 20, 0.9); backdrop-filter: blur(8px);
+            padding: 15px; border-radius: 10px; color: #e0e0e0;
+            border: 1px solid #333; 
+        }
+        .box-title { font-weight: 700; font-size: 11px; text-transform: uppercase; color: #666; margin-bottom: 10px; border-bottom: 1px solid #333; padding-bottom: 5px; }
+
+        /* UI DOS FILTROS */
+        .filter-row { display: flex; align-items: center; margin-bottom: 8px; cursor: pointer; font-size: 13px; transition: 0.2s; }
+        .filter-row:hover { color: #fff; transform: translateX(2px); }
+        .filter-row input { margin-right: 10px; accent-color: #4caf50; }
+        .f-icon { width: 20px; display: inline-block; text-align: center; margin-right: 5px; }
+
+        /* COORDENADAS */
+        .coord-box {
+            position: absolute; bottom: 20px; left: 20px; z-index: 1000;
+            font-family: 'Courier New', monospace; font-size: 14px; color: #4caf50; font-weight: bold;
+            border: 1px solid #333; background: #000; padding: 5px 10px; border-radius: 4px;
+        }
+
+        /* CRÉDITOS */
+        .credits-box {
+            font-size: 11px; color: #555; text-align: center; padding: 10px;
+            background: rgba(0,0,0,0.8); border-radius: 8px;
+        }
+        .guild-name { color: #ffc107; font-weight: bold; }
+
+        /* ÍCONES */
+        .map-icon {
+            font-size: 24px; text-align: center; line-height: 24px;
+            filter: drop-shadow(0 3px 3px rgba(0,0,0,0.8)); transition: transform 0.2s;
+        }
+        .map-icon:hover { transform: scale(1.3); z-index: 9999; }
+        .badge { padding: 2px 6px; border-radius: 4px; font-size: 10px; font-weight: bold; color: #fff; text-transform: uppercase; }
+    </style>
+</head>
+<body>
+
+    <div class="sidebar">
+        <div class="brand-box">
+            <h1 class="brand-title">HARMONY <span style="color:#4caf50">SATVIEW</span></h1>
+            <div class="brand-subtitle">Sistema de Monitoramento</div>
+        </div>
+
+        <div class="glass-box">
+            <div class="box-title">Visualização</div>
+            <label class="filter-row"><input type="radio" name="map" checked onclick="trocarMapa('terreno')"> Satélite (Terreno)</label>
+            <label class="filter-row"><input type="radio" name="map" onclick="trocarMapa('topo')"> Topográfico (Linhas)</label>
+        </div>
+
+        <div class="glass-box">
+            <div class="box-title">Camadas de Dados</div>
+            <label class="filter-row" style="color:#81c784"><input type="checkbox" checked onchange="toggleGroup('deeds_active')"> <span class="f-icon">🏠</span> Deeds Ativos</label>
+            <label class="filter-row" style="color:#9e9e9e"><input type="checkbox" checked onchange="toggleGroup('deeds_fallen')"> <span class="f-icon">🪦</span> Histórico (Ruínas)</label>
+            <div style="border-top:1px solid #333; margin:8px 0;"></div>
+            <label class="filter-row"><input type="checkbox" checked onchange="toggleGroup('rift')"> <span class="f-icon">🌀</span> Rifts</label>
+            <label class="filter-row"><input type="checkbox" checked onchange="toggleGroup('ores')"> <span class="f-icon">⛏️</span> Minérios</label>
+            <label class="filter-row"><input type="checkbox" checked onchange="toggleGroup('botany')"> <span class="f-icon">🌲</span> Botânica</label>
+            <label class="filter-row"><input type="checkbox" checked onchange="toggleGroup('mobs')"> <span class="f-icon">🐾</span> Fauna</label>
+        </div>
+
+        <div class="glass-box" style="padding:10px;">
+            <input type="text" placeholder="🔍 Buscar..." 
+                   style="width:100%; background:#111; border:1px solid #333; color:#fff; padding:8px; border-radius:6px; outline:none; box-sizing:border-box;"
+                   onkeyup="renderizarMapa(this.value)">
+        </div>
+
+        <div class="credits-box">
+            Desenvolvido por <span class="guild-name">A GUILDA</span><br>Harmony Server • 2025
+        </div>
+    </div>
+
+    <div class="coord-box"><span id="coords">0, 0</span></div>
+
+    <div id="map"></div>
+
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <script>
+        // --- 1. A CORREÇÃO MATEMÁTICA (O SEGREDO) ---
+        const MAP_SIZE = 4096;
+        
+        // Fator de Escala: 256 (Tamanho do Tile) / 4096 (Tamanho do Mapa) = 1/16
+        // Isso diz ao Leaflet que o mundo 4096 deve caber em 1 azulejo no Zoom 0.
+        const SCALE_FACTOR = 1/16; 
+
+        L.CRS.Harmony = L.Util.extend({}, L.CRS.Simple, {
+            transformation: new L.Transformation(SCALE_FACTOR, 0, SCALE_FACTOR, 0)
+        });
+
+        // --- 2. INICIALIZAÇÃO DO MAPA ---
+        var map = L.map('map', {
+            crs: L.CRS.Harmony,
+            minZoom: 0,
+            maxZoom: 4,
+            zoomControl: false,
+            maxBounds: [[0,0], [MAP_SIZE, MAP_SIZE]], // Impede arrastar pro infinito
+            maxBoundsViscosity: 0.5
+        });
+
+        L.control.zoom({ position: 'topright' }).addTo(map);
+        
+        // Centraliza
+        map.fitBounds([[0,0], [MAP_SIZE, MAP_SIZE]]);
+
+        // --- 3. CARREGAMENTO DOS TILES ---
+        // Verifica se a pasta é tiles_terreno (minúsculo)
+        var layerTerreno = L.tileLayer('tiles_terreno/{z}/{x}/{y}.png', { 
+            minZoom: 0, maxZoom: 4, tileSize: 256, noWrap: true, tms: false,
+            bounds: [[0,0], [MAP_SIZE, MAP_SIZE]]
+        }).addTo(map);
+        
+        var layerTopo = L.tileLayer('tiles_topo/{z}/{x}/{y}.png', { 
+            minZoom: 0, maxZoom: 4, tileSize: 256, noWrap: true, tms: false,
+            bounds: [[0,0], [MAP_SIZE, MAP_SIZE]]
+        });
+
+        // --- 4. CONFIGURAÇÃO DE DADOS ---
+        const config = {
+            'deed':        { icon: '🏠', color: '#4caf50', group: 'deeds_active', label: 'Ativo' },
+            'ruin':        { icon: '🪦', color: '#9e9e9e', group: 'deeds_fallen', label: 'Ruína' },
+            'rift':        { icon: '🌀', color: '#9c27b0', group: 'rift', label: 'Rift' },
+            'ore':         { icon: '⛏️', color: '#b0bec5', group: 'ores', label: 'Minério' }, 
+            'rare_ore':    { icon: '💎', color: '#00bcd4', group: 'ores', label: 'Raro' },
+            'surface':     { icon: '🔶', color: '#ff9800', group: 'ores', label: 'Solo' }, 
+            'tree':        { icon: '🌲', color: '#2e7d32', group: 'botany', label: 'Árvore' },
+            'bush':        { icon: '🌿', color: '#8bc34a', group: 'botany', label: 'Arbusto' },
+            'herb':        { icon: '🌱', color: '#a5d6a7', group: 'botany', label: 'Erva' },
+            'rare':        { icon: '⭐', color: '#ffc107', group: 'botany', label: 'Especial' },
+            'lair':        { icon: '🐾', color: '#f44336', group: 'mobs', label: 'Lair' },
+            'unique':      { icon: '🐲', color: '#d50000', group: 'mobs', label: 'Unique' }
+        };
+
+        // --- SEU BANCO DE DADOS ---
+        const dados = [
+            { cat: 'deed', nome: "Sede A Guilda", x: 2048, y: 2048, desc: "Centro de Operações." },
+            { cat: 'ruin', nome: "Ruína Antiga", x: 1200, y: 3000, desc: "Histórico" },
+            { cat: 'rift', nome: "Rift Norte", item: "Tier 4", x: 2500, y: 1500, desc: "18/11/2025" },
+            { cat: 'ore', item: 'Gold', x: 2200, y: 2200, ql: 50 },
+            { cat: 'tree', item: 'Oak', x: 500, y: 500, escala: 5 }
+        ];
+
+        var layers = L.layerGroup().addTo(map);
+        var filtrosAtivos = { deeds_active: true, deeds_fallen: true, rift: true, ores: true, botany: true, mobs: true };
+
+        function renderizarMapa(busca = "") {
+            layers.clearLayers();
+            dados.forEach(d => {
+                let conf = config[d.cat] || { icon: '❓', color: '#fff', group: 'outros' };
+                if (!filtrosAtivos[conf.group]) return;
+                
+                let nome = d.nome || d.item;
+                if (busca && !(nome + " " + (d.desc||"")).toLowerCase().includes(busca.toLowerCase())) return;
+
+                // Círculos de área
+                if (d.escala) {
+                    L.circle([d.y, d.x], { color: conf.color, fillColor: conf.color, fillOpacity: 0.15, radius: d.escala * 60, dashArray: '5, 5', weight: 1 }).addTo(layers);
+                }
+
+                // Marcadores
+                let htmlIcon = `<div style="color:${conf.color}; text-shadow:0 2px 4px #000">${conf.icon}</div>`;
+                // Atenção: Leaflet usa [Y, X]. A ordem aqui é [d.y, d.x]
+                L.marker([d.y, d.x], { icon: L.divIcon({ className: 'map-icon', html: htmlIcon, iconSize:[24,24] }) })
+                .bindPopup(`
+                    <div style="text-align:center; font-family:sans-serif; min-width:150px">
+                        <strong style="color:${conf.color}; font-size:14px">${conf.icon} ${nome}</strong><br>
+                        <span class="badge" style="background:${conf.color}; margin: 5px 0; display:inline-block">${conf.label}</span>
+                        <p style="margin:5px 0; font-size:12px; color:#ccc">${d.desc || ''}</p>
+                        <div style="background:#222; color:#666; font-size:10px; padding:2px; border-radius:4px; margin-top:5px">
+                            X:${d.x} Y:${d.y}
+                        </div>
+                    </div>`)
+                .addTo(layers);
+            });
+        }
+
+        function toggleGroup(grupo) { filtrosAtivos[grupo] = !filtrosAtivos[grupo]; renderizarMapa(document.querySelector('input[type="text"]').value); }
+        function trocarMapa(tipo) {
+            if (tipo === 'terreno') { map.addLayer(layerTerreno); map.removeLayer(layerTopo); }
+            else { map.addLayer(layerTopo); map.removeLayer(layerTerreno); }
+        }
+
+        // Coordenadas do Mouse (Com travas de segurança)
+        map.on('mousemove', e => {
+            let x = Math.max(0, Math.min(Math.round(e.latlng.lng), MAP_SIZE));
+            let y = Math.max(0, Math.min(Math.round(e.latlng.lat), MAP_SIZE));
+            document.getElementById('coords').innerText = `${x}, ${y}`;
+        });
+
+        renderizarMapa();
+    </script>
+</body>
+</html>
